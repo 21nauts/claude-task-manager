@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "post_tool_use": [
+      {
+        "command": "uv run .claude/hooks/post_tool_use.py",
+        "description": "Sync TodoWrite tasks to Task Manager"
+      }
+    ]
+  }
+}

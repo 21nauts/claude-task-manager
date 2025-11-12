@@ -7,12 +7,16 @@ Handles automatic Git sync with configurable intervals
 import subprocess
 import threading
 import time
+import os
 from pathlib import Path
 from datetime import datetime
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Configure Git SSH to use the correct key
+GIT_SSH_COMMAND = "ssh -i ~/.ssh/id_48nauts -o IdentitiesOnly=yes"
 
 
 class SyncManager:
@@ -152,13 +156,18 @@ class SyncManager:
             return False
 
         try:
+            # Setup environment with SSH key
+            env = os.environ.copy()
+            env["GIT_SSH_COMMAND"] = GIT_SSH_COMMAND
+
             # Pull first
             logger.info("📥 Pulling latest changes...")
             result = subprocess.run(
                 ["git", "pull", "--rebase"],
                 cwd=self.repo_path,
                 capture_output=True,
-                text=True
+                text=True,
+                env=env
             )
 
             if result.returncode != 0:
@@ -193,7 +202,8 @@ class SyncManager:
                     ["git", "push"],
                     cwd=self.repo_path,
                     capture_output=True,
-                    text=True
+                    text=True,
+                    env=env
                 )
 
                 if result.returncode != 0:
