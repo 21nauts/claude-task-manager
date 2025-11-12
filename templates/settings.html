@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Claude Task Manager</title>
+    <link rel="stylesheet" href="/static/css/dark-theme.css?v=2">
+    <style>
+        .settings-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .settings-header {
+            margin-bottom: 2rem;
+        }
+
+        .settings-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .settings-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .settings-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--accent-primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .help-text {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .toggle-label {
+            flex: 1;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-primary);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(24px);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert-success {
+            background: rgba(158, 206, 106, 0.1);
+            border: 1px solid rgba(158, 206, 106, 0.3);
+            color: #9ece6a;
+        }
+
+        .alert-error {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+
+        .current-value {
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: var(--bg-tertiary);
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <div class="settings-header">
+            <h1 class="settings-title">⚙️ Settings</h1>
+            <p class="settings-subtitle">Configure your task manager</p>
+        </div>
+
+        <div class="alert alert-success" id="successAlert"></div>
+        <div class="alert alert-error" id="errorAlert"></div>
+
+        <!-- Git Configuration -->
+        <div class="settings-section">
+            <h2 class="section-header">📦 Git Repository</h2>
+
+            <div class="form-group">
+                <label class="form-label">Repository URL</label>
+                <input type="url" class="form-input" id="repoUrl" placeholder="git@github.com:username/my-tasks.git">
+                <div class="help-text">Your Git repository where tasks are stored and synced</div>
+                <div class="current-value" id="currentRepo">Loading...</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Local Path</label>
+                <input type="text" class="form-input" id="repoPath" placeholder="~/claude-tasks">
+                <div class="help-text">Local directory for task storage</div>
+                <div class="current-value" id="currentPath">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Sync Settings -->
+        <div class="settings-section">
+            <h2 class="section-header">🔄 Auto-Sync</h2>
+
+            <div class="toggle-group">
+                <div class="toggle-label">
+                    <div style="font-weight: 500;">Enable Auto-Sync</div>
+                    <div class="help-text">Automatically sync with Git remote</div>
+                </div>
+                <div class="toggle-switch" id="autoSyncToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Sync Interval (minutes)</label>
+                <input type="number" class="form-input" id="syncInterval" min="5" max="1440" value="120">
+                <div class="help-text">How often to sync with remote (default: 120 minutes)</div>
+            </div>
+
+            <div class="toggle-group">
+                <div class="toggle-label">
+                    <div style="font-weight: 500;">Sync on Startup</div>
+                    <div class="help-text">Pull latest changes when server starts</div>
+                </div>
+                <div class="toggle-switch" id="syncStartupToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+
+            <div class="toggle-group">
+                <div class="toggle-label">
+                    <div style="font-weight: 500;">Auto-Push on Change</div>
+                    <div class="help-text">Immediately push task changes to remote</div>
+                </div>
+                <div class="toggle-switch" id="autoPushToggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="settings-section">
+            <h2 class="section-header">🔨 Actions</h2>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" id="syncNowBtn">🔄 Sync Now</button>
+                <button class="btn btn-secondary" id="testConnectionBtn">🔍 Test Connection</button>
+            </div>
+        </div>
+
+        <!-- Save/Cancel -->
+        <div class="btn-group">
+            <button class="btn btn-primary" id="saveBtn">💾 Save Settings</button>
+            <button class="btn btn-secondary" onclick="window.location.href='/'">← Back to Tasks</button>
+        </div>
+    </div>
+
+    <script>
+        let currentConfig = {};
+
+        // Load current configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+
+                if (data.success) {
+                    currentConfig = data.config;
+
+                    // Display current values
+                    document.getElementById('currentRepo').textContent = `Current: ${currentConfig.tasks_repo_remote || 'Not set'}`;
+                    document.getElementById('currentPath').textContent = `Current: ${currentConfig.tasks_repo_path}`;
+
+                    // Set form values
+                    document.getElementById('repoUrl').value = currentConfig.tasks_repo_remote || '';
+                    document.getElementById('repoPath').value = currentConfig.tasks_repo_path;
+                    document.getElementById('syncInterval').value = currentConfig.auto_sync_interval_minutes;
+
+                    // Set toggles
+                    setToggle('autoSyncToggle', currentConfig.auto_sync_enabled);
+                    setToggle('syncStartupToggle', currentConfig.sync_on_startup);
+                    setToggle('autoPushToggle', currentConfig.auto_push_on_change);
+                }
+            } catch (error) {
+                showError('Failed to load configuration: ' + error.message);
+            }
+        }
+
+        // Toggle switches
+        function setToggle(id, active) {
+            const toggle = document.getElementById(id);
+            if (active) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+
+        function getToggleState(id) {
+            return document.getElementById(id).classList.contains('active');
+        }
+
+        // Toggle click handlers
+        document.getElementById('autoSyncToggle').addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+        document.getElementById('syncStartupToggle').addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+        document.getElementById('autoPushToggle').addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+
+        // Save settings
+        document.getElementById('saveBtn').addEventListener('click', async function() {
+            const newConfig = {
+                tasks_repo_remote: document.getElementById('repoUrl').value.trim(),
+                tasks_repo_path: document.getElementById('repoPath').value.trim(),
+                auto_sync_enabled: getToggleState('autoSyncToggle'),
+                auto_sync_interval_minutes: parseInt(document.getElementById('syncInterval').value),
+                sync_on_startup: getToggleState('syncStartupToggle'),
+                auto_push_on_change: getToggleState('autoPushToggle')
+            };
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newConfig)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Settings saved successfully! Server will restart with new settings.');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showError('Failed to save settings: ' + data.error);
+                }
+            } catch (error) {
+                showError('Failed to save settings: ' + error.message);
+            }
+        });
+
+        // Sync now
+        document.getElementById('syncNowBtn').addEventListener('click', async function() {
+            this.disabled = true;
+            this.textContent = '🔄 Syncing...';
+
+            try {
+                const response = await fetch('/api/sync/now', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Sync completed successfully!');
+                } else {
+                    showError('Sync failed: Check that your Git URL is correct and you have access');
+                }
+            } catch (error) {
+                showError('Sync failed: ' + error.message);
+            } finally {
+                this.disabled = false;
+                this.textContent = '🔄 Sync Now';
+            }
+        });
+
+        // Test connection
+        document.getElementById('testConnectionBtn').addEventListener('click', async function() {
+            this.disabled = true;
+            this.textContent = '🔍 Testing...';
+
+            try {
+                const response = await fetch('/api/sync/status');
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Connection OK! Last sync: ' + (data.sync_status.last_sync || 'Never'));
+                } else {
+                    showError('Connection test failed');
+                }
+            } catch (error) {
+                showError('Test failed: ' + error.message);
+            } finally {
+                this.disabled = false;
+                this.textContent = '🔍 Test Connection';
+            }
+        });
+
+        function showSuccess(message) {
+            const alert = document.getElementById('successAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 5000);
+        }
+
+        function showError(message) {
+            const alert = document.getElementById('errorAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 5000);
+        }
+
+        // Load config on page load
+        loadConfig();
+    </script>
+</body>
+</html>

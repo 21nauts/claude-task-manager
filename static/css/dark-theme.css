@@ -1268,3 +1268,206 @@ kbd {
     right: 1.5rem;
   }
 }
+
+/* ===================================
+   Version Badge & Timeline
+   =================================== */
+.version-badge {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.version-badge:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(206, 145, 120, 0.3);
+}
+
+.version-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+}
+
+.version-modal-content {
+  background: var(--bg-primary);
+  border: 2px solid var(--accent-primary);
+  border-radius: 12px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+.version-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary);
+  z-index: 1;
+}
+
+.version-modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--accent-primary);
+}
+
+.version-modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  transition: color 0.2s;
+}
+
+.version-modal-close:hover {
+  color: var(--accent-primary);
+}
+
+.version-timeline {
+  padding: 2rem 1.5rem;
+  position: relative;
+}
+
+.version-timeline::before {
+  content: '';
+  position: absolute;
+  left: 2.5rem;
+  top: 2rem;
+  bottom: 2rem;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent-primary), transparent);
+}
+
+.version-item {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.version-item:last-child {
+  margin-bottom: 0;
+}
+
+.version-dot {
+  width: 16px;
+  height: 16px;
+  background: var(--accent-primary);
+  border: 3px solid var(--bg-primary);
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+  box-shadow: 0 0 0 4px rgba(206, 145, 120, 0.2);
+  z-index: 1;
+}
+
+.version-content {
+  flex: 1;
+  padding-bottom: 1rem;
+}
+
+.version-number {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  margin-bottom: 0.25rem;
+}
+
+.version-date {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.version-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.version-features li {
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  position: relative;
+}
+
+.version-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--accent-primary);
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .version-badge {
+    bottom: 0.75rem;
+    left: 0.75rem;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .version-modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .version-timeline::before {
+    left: 1.5rem;
+  }
+
+  .version-modal-header {
+    padding: 1rem;
+  }
+
+  .version-modal-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .version-timeline {
+    padding: 1.5rem 1rem;
+  }
+
+  .version-item {
+    gap: 1rem;
+  }
+
+  .version-features li {
+    font-size: 0.85rem;
+    padding: 0.375rem 0;
+  }
+}

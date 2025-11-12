@@ -672,3 +672,19 @@ document.querySelectorAll(".fab-menu-item").forEach(item => {
 document.addEventListener("DOMContentLoaded", () => {
   loadProjects();
 });
+
+// Version Modal
+document.getElementById("versionBadge").addEventListener("click", () => {
+  document.getElementById("versionModal").style.display = "flex";
+});
+
+document.getElementById("closeVersionModal").addEventListener("click", () => {
+  document.getElementById("versionModal").style.display = "none";
+});
+
+// Close version modal when clicking outside
+document.getElementById("versionModal").addEventListener("click", (e) => {
+  if (e.target.id === "versionModal") {
+    document.getElementById("versionModal").style.display = "none";
+  }
+});

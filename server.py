@@ -105,6 +105,14 @@ def setup():
     return render_template("setup.html")
 
 
+@app.route("/settings")
+def settings():
+    """Settings page"""
+    if not config.is_configured():
+        return redirect(url_for('setup'))
+    return render_template("settings.html")
+
+
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     """Get all tasks with optional filters"""
