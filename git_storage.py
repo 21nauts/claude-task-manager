@@ -354,6 +354,25 @@ class GitTaskStorage:
 
         projects = {}
 
+        # First, load all project metadata files
+        for project_file in self.projects_dir.glob("*.json"):
+            try:
+                project_data = json.loads(project_file.read_text())
+                project_path = project_data.get("project_path")
+
+                if project_path:
+                    projects[project_path] = {
+                        "project_path": project_path,
+                        "project_name": project_data.get("project_name", project_path),
+                        "description": project_data.get("description", ""),
+                        "task_count": 0,
+                        "pending_count": 0,
+                        "completed_count": 0
+                    }
+            except Exception:
+                continue
+
+        # Then count tasks for each project
         for task_file in self.tasks_dir.glob("*.json"):
             try:
                 task_data = json.loads(task_file.read_text())
@@ -365,6 +384,8 @@ class GitTaskStorage:
                 if project_path not in projects:
                     projects[project_path] = {
                         "project_path": project_path,
+                        "project_name": project_path,
+                        "description": "",
                         "task_count": 0,
                         "pending_count": 0,
                         "completed_count": 0
@@ -394,6 +415,31 @@ class GitTaskStorage:
         stats["last_active"] = datetime.now().isoformat()
 
         project_file.write_text(json.dumps(stats, indent=2))
+
+    def create_project(self, project_name: str, description: str = "") -> str:
+        """Create a new project"""
+        project_path = project_name.lower().replace(" ", "-")
+        project_file = self.projects_dir / f"{project_path}.json"
+
+        project_data = {
+            "project_name": project_name,
+            "project_path": project_path,
+            "description": description,
+            "created_at": datetime.now().isoformat(),
+            "last_active": datetime.now().isoformat(),
+            "total": 0,
+            "pending": 0,
+            "in_progress": 0,
+            "completed": 0
+        }
+
+        project_file.write_text(json.dumps(project_data, indent=2))
+        self._git_commit_and_push(
+            f"Create project: {project_name}",
+            [str(project_file.relative_to(self.repo_path))]
+        )
+
+        return project_path
 
 
 # Singleton instance

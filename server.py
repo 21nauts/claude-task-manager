@@ -280,14 +280,19 @@ def handle_projects():
                 "error": "Project name is required"
             }), 400
 
-        # For simplicity, store project path as project name (can be enhanced later)
-        project_path = project_name.lower().replace(" ", "-")
+        try:
+            project_path = storage.create_project(project_name, description)
 
-        return jsonify({
-            "success": True,
-            "project_path": project_path,
-            "message": "Project created successfully"
-        }), 201
+            return jsonify({
+                "success": True,
+                "project_path": project_path,
+                "message": "Project created successfully"
+            }), 201
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 400
 
 
 @app.route("/api/sync/status", methods=["GET"])
