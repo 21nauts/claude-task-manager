@@ -1,42 +1,68 @@
 # Task Manager · 仕事
 
-**Minimalistic Japanese-style task manager for Claude Code**
+**Git-Based Task Manager for Claude Code**
 
-A beautiful, dark-themed sidebar task manager that seamlessly integrates with Claude Code workflows. Automatically captures tasks from `TodoWrite` tool calls and provides a clean, distraction-free interface for task management.
+A beautiful, dark-themed task manager that seamlessly integrates with Claude Code workflows. Uses Git as its database for true cross-project task management. Automatically captures tasks from `TodoWrite` tool calls and provides a clean, distraction-free interface.
 
 ## ✨ Features
 
 - 🎋 **Japanese Minimalism** - Clean lines, negative space (Ma), refined beauty (Shibui)
 - 🌑 **Dark Theme** - Easy on the eyes with traditional pottery color accents
 - ⚡ **Auto-Capture** - Automatically captures tasks from Claude Code `TodoWrite` calls
-- 📊 **Project-Based** - Filter tasks by project, category, or status
+- 📊 **Cross-Project** - One task repository for ALL your projects
+- 🔄 **Git-Powered** - Automatic commit, push, and sync
+- 📜 **Full History** - Every task change tracked in Git
+- 🌍 **Universal Access** - Clone your tasks repo anywhere
 - 🎨 **Sidebar UI** - Unobtrusive side panel, toggleable with `Cmd+Shift+T`
-- 💾 **SQLite Database** - Lightweight, no server setup required
 - 🔄 **Real-time** - Auto-refresh every 30 seconds
 
 ## 🚀 Quick Start
 
-### 1. Start the Server
+### 1. Clone the Repository
 
 ```bash
-cd apps/task-manager
+git clone git@github.com:21nauts/claude-task-manager.git ~/claude-task-manager
+```
+
+### 2. (Optional) Set Up Remote for Tasks
+
+```bash
+# Your tasks are stored in ~/claude-tasks
+cd ~/claude-tasks
+git remote add origin git@github.com:YOUR_USERNAME/your-tasks.git
+git push -u origin main
+```
+
+### 3. Install the Hook
+
+```bash
+cp ~/claude-task-manager/apps/task-manager/post_tool_use_task_hook.py \
+   ~/.claude/hooks/post_tool_use_task_manager.py
+chmod +x ~/.claude/hooks/post_tool_use_task_manager.py
+```
+
+### 4. Start the Server
+
+```bash
+cd ~/claude-task-manager/apps/task-manager
 uv run server.py
 ```
 
-Server will start on `http://localhost:5555`
+Server starts on `http://localhost:5555`
 
-### 2. Open in Browser
+### 5. Open the UI
 
 ```bash
 open http://localhost:5555
 ```
 
-### 3. Use the Sidebar
+### 6. Use the Sidebar
 
 - Click the **toggle button** (top right) or press `Cmd+Shift+T`
 - Create tasks manually or let Claude Code auto-capture them
 - Filter by status, project, or category
 - Complete, delete, or track tasks
+- All changes are automatically committed to Git!
 
 ## 🎨 Design Philosophy
 
@@ -87,20 +113,30 @@ The `post_tool_use.py` hook captures `TodoWrite` calls:
 ## 📁 Project Structure
 
 ```
-task-manager/
-├── database.py          # SQLite database operations
-├── server.py            # Flask REST API server
-├── static/
-│   ├── css/
-│   │   └── dark-theme.css   # Japanese minimal theme
-│   └── js/
-│       └── app.js           # Client-side interactions
-├── templates/
-│   └── index.html           # Main UI template
-└── README.md
+~/claude-task-manager/       # Task manager application
+├── apps/task-manager/
+│   ├── server.py           # Flask REST API server
+│   ├── git_storage.py      # Git-based storage engine
+│   ├── completion_reporter.py  # Task completion reports
+│   ├── post_tool_use_task_hook.py  # Claude Code hook
+│   ├── database.py         # Legacy SQLite (deprecated)
+│   ├── static/
+│   │   ├── css/dark-theme.css
+│   │   └── js/app.js
+│   ├── templates/index.html
+│   ├── README.md
+│   └── SETUP.md           # Detailed setup guide
+└── .claude/hooks/
+    └── post_tool_use_task_manager.py  # Installed hook
 
-../../data/
-└── tasks.db             # SQLite database (auto-created)
+~/claude-tasks/             # Your tasks Git repository
+├── .git/                   # Git history of all task changes
+├── tasks/                  # Individual task files (JSON)
+│   ├── abc123def456.json
+│   ├── xyz789uvw012.json
+│   └── ...
+└── projects/               # Project metadata
+    └── HomeLab.json
 ```
 
 ## 🎯 API Endpoints
@@ -161,14 +197,24 @@ GET /api/projects
 
 ## 🔧 Configuration
 
-### Database Location
+### Tasks Repository Location
 
-Default: `/Users/jarvis/0200_projects/dev/000_Active/HomeLab/data/tasks.db`
+Default: `~/claude-tasks`
 
-To change, edit `database.py`:
+To change, edit `git_storage.py`:
 
 ```python
-DB_PATH = Path("/your/custom/path/tasks.db")
+storage = GitTaskStorage(repo_path="~/my-custom-location")
+```
+
+### Git Remote (Optional)
+
+Push your tasks to GitHub for backup and multi-device sync:
+
+```bash
+cd ~/claude-tasks
+git remote add origin YOUR_GIT_URL
+git push -u origin main
 ```
 
 ### Server Port
@@ -247,18 +293,38 @@ lsof -ti:5555 | xargs kill -9
 python server.py --port 5556
 ```
 
-### Database Locked
+### Git Sync Issues
 
 ```bash
-# Close any connections and restart
-rm data/tasks.db-journal
+cd ~/claude-tasks
+git status
+git pull --rebase
+git push
 ```
 
 ### Tasks Not Auto-Capturing
 
-1. Check hook is active: `cat .claude/hooks/post_tool_use.py`
-2. Verify database path in hook matches server
-3. Check logs: `tail -f logs/post_tool_use.json`
+1. Check hook is executable: `ls -la ~/.claude/hooks/post_tool_use_task_manager.py`
+2. Make it executable: `chmod +x ~/.claude/hooks/post_tool_use_task_manager.py`
+3. Check hook logs: `tail -f ~/.claude/logs/task_hook_errors.log`
+
+### On New Computer
+
+```bash
+# Clone your tasks repository
+git clone YOUR_TASKS_GIT_URL ~/claude-tasks
+
+# Clone task manager
+git clone git@github.com:21nauts/claude-task-manager.git ~/claude-task-manager
+
+# Install hook
+cp ~/claude-task-manager/apps/task-manager/post_tool_use_task_hook.py \
+   ~/.claude/hooks/post_tool_use_task_manager.py
+
+# Start server - you now have ALL your tasks!
+cd ~/claude-task-manager/apps/task-manager
+uv run server.py
+```
 
 ## 📝 Development
 
@@ -271,25 +337,31 @@ uv run server.py
 
 Flask debug mode is enabled by default for hot-reloading.
 
-### Database Schema
+### Task File Format
 
-```sql
-CREATE TABLE tasks (
-  id INTEGER PRIMARY KEY,
-  task_name TEXT NOT NULL,
-  description TEXT,
-  action_required TEXT,
-  due_date TEXT,
-  category TEXT,
-  status TEXT DEFAULT 'pending',
-  project_path TEXT,
-  created_at TEXT,
-  completed_at TEXT,
-  claude_session_id TEXT,
-  priority INTEGER DEFAULT 0,
-  metadata TEXT
-);
+Each task is a JSON file in `~/claude-tasks/tasks/`:
+
+```json
+{
+  "id": "abc123def456",
+  "task_name": "Implement authentication",
+  "description": "Add JWT-based auth",
+  "action_required": "See issue #42",
+  "due_date": "2025-12-01",
+  "category": "feature",
+  "status": "in_progress",
+  "project_path": "/Users/you/projects/myapp",
+  "parent_task_id": null,
+  "created_at": "2025-11-12T10:00:00",
+  "completed_at": null,
+  "claude_session_id": "session_xyz",
+  "priority": 5,
+  "metadata": {},
+  "completion_report": null
+}
 ```
+
+Every change is committed to Git automatically!
 
 ## 🙏 Inspiration
 
@@ -303,9 +375,24 @@ Design inspired by:
 
 MIT License - Use freely in your projects!
 
+## 🌟 Why Git-Based?
+
+| Feature | Git-Based | SQLite |
+|---------|-----------|--------|
+| **Cross-Project** | ✅ One repo for all projects | ❌ Separate DB per project |
+| **History** | ✅ Full Git history | ❌ No change tracking |
+| **Sync** | ✅ Push/pull anywhere | ❌ Manual file copy |
+| **Multi-Device** | ✅ Same tasks everywhere | ❌ Per-device databases |
+| **Backup** | ✅ Automatic via Git | ❌ Manual backups |
+| **Collaboration** | ✅ Git workflows | ❌ File conflicts |
+
+## 📚 More Documentation
+
+See [SETUP.md](./SETUP.md) for detailed setup instructions, advanced configuration, and troubleshooting.
+
 ---
 
-**Created by:** [candorian](https://github.com/candorian)
-**Repository:** [claude-task-manager](https://github.com/candorian/claude-task-manager)
-**Version:** 1.0.0
+**Created by:** candorian
+**Repository:** [claude-task-manager](https://github.com/21nauts/claude-task-manager)
+**Version:** 2.0.0 (Git-Based)
 **Status:** ✅ Production Ready

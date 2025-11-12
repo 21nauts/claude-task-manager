@@ -12,9 +12,11 @@ Task Manager Flask Server
 Minimalistic Japanese-style dark theme task manager for Claude Code
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect, url_for
 from flask_cors import CORS
-from database import get_db
+from git_storage import get_storage
+from config import get_config
+from sync_manager import SyncManager
 from datetime import datetime
 from pathlib import Path
 import os
@@ -22,14 +24,85 @@ import os
 app = Flask(__name__)
 CORS(app)  # Enable CORS for local development
 
-# Get database instance
-db = get_db()
+# Get configuration
+config = get_config()
+
+# Initialize sync manager
+sync_manager = None
+storage = None
+
+def init_app():
+    """Initialize application with configuration"""
+    global storage, sync_manager
+
+    if config.is_configured():
+        # Load configured repository
+        repo_path = config.get_tasks_repo_path()
+        remote_url = config.get_tasks_repo_remote()
+
+        # Initialize sync manager
+        sync_manager = SyncManager(
+            repo_path=repo_path,
+            remote_url=remote_url,
+            interval_minutes=config.get('auto_sync_interval_minutes', 120)
+        )
+
+        # Clone or init repository
+        sync_manager.clone_or_init()
+
+        # Sync on startup if enabled
+        if config.get('sync_on_startup', True):
+            sync_manager.sync_now()
+
+        # Start auto-sync if enabled
+        if config.get('auto_sync_enabled', True):
+            sync_manager.start_auto_sync()
+
+        # Get storage instance
+        storage = get_storage(repo_path=str(repo_path))
+
+        print(f"✅ Tasks repository: {repo_path}")
+        print(f"✅ Remote: {remote_url}")
+        print(f"✅ Auto-sync: {'Enabled' if config.get('auto_sync_enabled') else 'Disabled'}")
+
+init_app()
 
 
 @app.route("/")
 def index():
-    """Serve the main UI"""
+    """Serve the main UI or setup wizard"""
+    if not config.is_configured():
+        return redirect(url_for('setup'))
     return render_template("index.html")
+
+
+@app.route("/setup", methods=["GET", "POST"])
+def setup():
+    """Initial setup wizard"""
+    if request.method == "POST":
+        data = request.json
+        remote_url = data.get("remote_url")
+        local_path = data.get("local_path")
+
+        if not remote_url:
+            return jsonify({
+                "success": False,
+                "error": "Remote URL is required"
+            }), 400
+
+        # Save configuration
+        config.setup_initial_config(remote_url, local_path)
+
+        # Reinitialize app
+        init_app()
+
+        return jsonify({
+            "success": True,
+            "message": "Configuration saved! Redirecting...",
+            "redirect": "/"
+        })
+
+    return render_template("setup.html")
 
 
 @app.route("/api/tasks", methods=["GET"])
@@ -40,7 +113,10 @@ def get_tasks():
     category = request.args.get("category")
     limit = int(request.args.get("limit", 100))
 
-    tasks = db.get_tasks(
+    # Sync with remote before getting tasks
+    storage.sync()
+
+    tasks = storage.get_tasks(
         status=status,
         project_path=project,
         category=category,
@@ -60,7 +136,7 @@ def create_task():
     data = request.json
 
     try:
-        task_id = db.create_task(
+        task_id = storage.create_task(
             task_name=data.get("task_name"),
             description=data.get("description", ""),
             action_required=data.get("action_required", ""),
@@ -84,10 +160,10 @@ def create_task():
         }), 400
 
 
-@app.route("/api/tasks/<int:task_id>", methods=["GET"])
+@app.route("/api/tasks/<task_id>", methods=["GET"])
 def get_task(task_id):
     """Get a specific task"""
-    task = db.get_task_by_id(task_id)
+    task = storage.get_task_by_id(task_id)
 
     if task:
         return jsonify({
@@ -101,11 +177,12 @@ def get_task(task_id):
         }), 404
 
 
-@app.route("/api/tasks/<int:task_id>/status", methods=["PATCH"])
+@app.route("/api/tasks/<task_id>/status", methods=["PATCH"])
 def update_task_status(task_id):
     """Update task status"""
     data = request.json
     status = data.get("status")
+    report = data.get("report")  # Optional completion report
 
     if status not in ["pending", "in_progress", "completed"]:
         return jsonify({
@@ -113,7 +190,7 @@ def update_task_status(task_id):
             "error": "Invalid status"
         }), 400
 
-    success = db.update_task_status(task_id, status)
+    success = storage.update_task_status(task_id, status, report)
 
     if success:
         return jsonify({
@@ -127,10 +204,10 @@ def update_task_status(task_id):
         }), 404
 
 
-@app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
+@app.route("/api/tasks/<task_id>", methods=["DELETE"])
 def delete_task(task_id):
     """Delete a task"""
-    success = db.delete_task(task_id)
+    success = storage.delete_task(task_id)
 
     if success:
         return jsonify({
@@ -149,7 +226,7 @@ def get_task_stats():
     """Get task statistics"""
     project = request.args.get("project")
 
-    stats = db.get_project_stats(project)
+    stats = storage.get_project_stats(project)
 
     return jsonify({
         "success": True,
@@ -164,8 +241,8 @@ def get_stats():
     """Get task statistics"""
     project = request.args.get("project")
 
-    stats = db.get_project_stats(project)
-    projects = db.get_all_projects()
+    stats = storage.get_project_stats(project)
+    projects = storage.get_all_projects()
 
     return jsonify({
         "success": True,
@@ -178,7 +255,7 @@ def get_stats():
 def handle_projects():
     """Get all projects or create a new one"""
     if request.method == "GET":
-        projects = db.get_all_projects()
+        projects = storage.get_all_projects()
         return jsonify({
             "success": True,
             "projects": projects
@@ -205,21 +282,112 @@ def handle_projects():
         }), 201
 
 
+@app.route("/api/sync/status", methods=["GET"])
+def sync_status():
+    """Get sync status"""
+    if not sync_manager:
+        return jsonify({
+            "success": False,
+            "error": "Sync manager not initialized"
+        }), 503
+
+    status = sync_manager.get_status()
+    return jsonify({
+        "success": True,
+        "sync_status": status,
+        "config": {
+            "auto_sync_enabled": config.get('auto_sync_enabled'),
+            "interval_minutes": config.get('auto_sync_interval_minutes'),
+            "sync_on_startup": config.get('sync_on_startup'),
+            "auto_push_on_change": config.get('auto_push_on_change')
+        }
+    })
+
+
+@app.route("/api/sync/now", methods=["POST"])
+def sync_now():
+    """Trigger immediate sync"""
+    if not sync_manager:
+        return jsonify({
+            "success": False,
+            "error": "Sync manager not initialized"
+        }), 503
+
+    success = sync_manager.sync_now()
+
+    return jsonify({
+        "success": success,
+        "message": "Sync completed" if success else "Sync failed",
+        "timestamp": datetime.now().isoformat()
+    })
+
+
+@app.route("/api/config", methods=["GET", "PUT"])
+def handle_config():
+    """Get or update configuration"""
+    if request.method == "GET":
+        return jsonify({
+            "success": True,
+            "config": {
+                "tasks_repo_path": str(config.get_tasks_repo_path()),
+                "tasks_repo_remote": config.get_tasks_repo_remote(),
+                "auto_sync_enabled": config.get('auto_sync_enabled'),
+                "auto_sync_interval_minutes": config.get('auto_sync_interval_minutes'),
+                "sync_on_startup": config.get('sync_on_startup'),
+                "auto_push_on_change": config.get('auto_push_on_change')
+            }
+        })
+
+    elif request.method == "PUT":
+        data = request.json
+
+        # Update configuration
+        for key, value in data.items():
+            if key in ['auto_sync_enabled', 'auto_sync_interval_minutes', 'sync_on_startup', 'auto_push_on_change']:
+                config.set(key, value)
+
+        # Restart sync manager if interval changed
+        if 'auto_sync_interval_minutes' in data and sync_manager:
+            sync_manager.stop_auto_sync()
+            sync_manager.interval_minutes = data['auto_sync_interval_minutes']
+            sync_manager.interval_seconds = data['auto_sync_interval_minutes'] * 60
+            if config.get('auto_sync_enabled'):
+                sync_manager.start_auto_sync()
+
+        return jsonify({
+            "success": True,
+            "message": "Configuration updated"
+        })
+
+
 @app.route("/health", methods=["GET"])
 def health():
     """Health check endpoint"""
     return jsonify({
         "status": "healthy",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "configured": config.is_configured(),
+        "sync_active": sync_manager.get_status()['is_running'] if sync_manager else False
     })
 
 
 if __name__ == "__main__":
-    print("🎋 Task Manager Server")
+    print("🎋 Task Manager Server (Git-Based)")
     print("=" * 40)
-    print(f"📍 Database: {db.db_path}")
+
+    if storage:
+        print(f"📍 Git Repo: {storage.repo_path}")
+    else:
+        print(f"📍 Setup required - visit http://localhost:5555")
+
     print(f"🌐 Server: http://localhost:5555")
     print(f"🎨 Theme: Japanese Minimalism")
+
+    if config.is_configured():
+        print(f"🔄 Sync: Automatic every {config.get('auto_sync_interval_minutes')} minutes")
+    else:
+        print(f"🔄 Setup wizard will guide you through configuration")
+
     print("=" * 40)
     print("\n✨ Press Ctrl+C to stop\n")
 

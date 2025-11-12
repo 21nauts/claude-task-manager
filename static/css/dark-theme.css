@@ -17,9 +17,9 @@
   --bg-hover: #333333;
   
   /* Accent colors */
-  --accent-primary: #d4a373;
-  --accent-hover: #e0b489;
-  --accent-muted: #8b6f47;
+  --accent-primary: #CE9178;
+  --accent-hover: #D9A186;
+  --accent-muted: #9D6B5A;
   
   /* Text colors */
   --text-primary: #e8e8e8;
@@ -31,7 +31,7 @@
   --border-hover: #4a4a4a;
   
   /* Status colors */
-  --status-pending: #d4a373;
+  --status-pending: #CE9178;
   --status-progress: #7aa2f7;
   --status-completed: #9ece6a;
   
@@ -1174,14 +1174,14 @@ kbd {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 4px 12px rgba(206, 145, 120, 0.4);
   transition: all 0.3s ease;
   z-index: 1000;
 }
 
 .fab:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(212, 175, 55, 0.6);
+  box-shadow: 0 6px 16px rgba(206, 145, 120, 0.6);
 }
 
 .fab svg {
@@ -1241,7 +1241,7 @@ kbd {
 }
 
 .fab-menu-item:hover {
-  background: rgba(212, 175, 55, 0.1);
+  background: rgba(206, 145, 120, 0.1);
   color: var(--accent-primary);
 }
 

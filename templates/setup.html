@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup - Claude Task Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e8e6e3;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .setup-container {
+            background: #242424;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #CE9178;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #e8e6e3;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        input[type="text"],
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            color: #e8e6e3;
+            font-size: 14px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #CE9178;
+        }
+
+        .example-box {
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            border-left: 3px solid #CE9178;
+        }
+
+        .example-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #CE9178;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .example-item {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+
+        .info-box {
+            background: rgba(206, 145, 120, 0.1);
+            border: 1px solid rgba(206, 145, 120, 0.3);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .info-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #CE9178;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        .info-text ul {
+            margin-top: 8px;
+            padding-left: 20px;
+        }
+
+        .info-text li {
+            margin-bottom: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #CE9178;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #D9A186;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(206, 145, 120, 0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #ff6b6b;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(95, 122, 97, 0.1);
+            border: 1px solid rgba(95, 122, 97, 0.3);
+            color: #5f7a61;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <h1>🎋 Welcome to Claude Task Manager</h1>
+        <p class="subtitle">Let's set up your Git-based task repository</p>
+
+        <div class="info-box">
+            <div class="info-title">📚 How It Works</div>
+            <div class="info-text">
+                <p>Your tasks will be stored in a Git repository that you control. This means:</p>
+                <ul>
+                    <li><strong>All your projects</strong> share the same task repository</li>
+                    <li><strong>Full history</strong> of every task change tracked in Git</li>
+                    <li><strong>Sync across devices</strong> by cloning your tasks repo</li>
+                    <li><strong>Automatic backups</strong> via Git push/pull</li>
+                </ul>
+            </div>
+        </div>
+
+        <form id="setupForm">
+            <div class="form-group">
+                <label for="remoteUrl">Git Repository URL *</label>
+                <input
+                    type="url"
+                    id="remoteUrl"
+                    name="remote_url"
+                    placeholder="git@github.com:yourname/my-tasks.git"
+                    required
+                >
+                <div class="help-text">The Git repository where your tasks will be stored and synced</div>
+
+                <div class="example-box">
+                    <div class="example-title">Examples</div>
+                    <div class="example-item">• git@github.com:yourname/my-tasks.git</div>
+                    <div class="example-item">• https://github.com/yourname/my-tasks.git</div>
+                    <div class="example-item">• git@gitlab.com:yourname/my-tasks.git</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="localPath">Local Path (Optional)</label>
+                <input
+                    type="text"
+                    id="localPath"
+                    name="local_path"
+                    placeholder="~/claude-tasks"
+                >
+                <div class="help-text">Default: ~/claude-tasks</div>
+            </div>
+
+            <div class="info-box">
+                <div class="info-title">💡 Quick Setup Guide</div>
+                <div class="info-text">
+                    <strong>If you don't have a repository yet:</strong>
+                    <ol style="margin-top: 8px; padding-left: 20px;">
+                        <li>Create a new <strong>private</strong> repository on GitHub (or GitLab, etc.)</li>
+                        <li>Name it something like "my-claude-tasks"</li>
+                        <li>Copy the Git URL and paste it above</li>
+                        <li>Click "Start Using Claude Task Manager"</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    Start Using Claude Task Manager
+                </button>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('setupForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const remoteUrl = document.getElementById('remoteUrl').value.trim();
+            const localPath = document.getElementById('localPath').value.trim();
+
+            if (!remoteUrl) {
+                showError('Git repository URL is required');
+                return;
+            }
+
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Setting up... <span class="spinner"></span>';
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+
+            try {
+                const response = await fetch('/setup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        remote_url: remoteUrl,
+                        local_path: localPath || null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Setup complete! Redirecting to task manager...');
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/';
+                    }, 1500);
+                } else {
+                    showError(data.error || 'Setup failed');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Start Using Claude Task Manager';
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Start Using Claude Task Manager';
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
