@@ -10,6 +10,29 @@ let tasks = [];
 let currentFilter = "all";
 let currentView = "card"; // card, list, compact
 
+// ========================================
+// Project Color Management
+// ========================================
+
+// Get project colors from localStorage
+function getProjectColors() {
+  const colors = localStorage.getItem('projectColors');
+  return colors ? JSON.parse(colors) : {};
+}
+
+// Save project color
+function saveProjectColor(projectPath, color) {
+  const colors = getProjectColors();
+  colors[projectPath] = color;
+  localStorage.setItem('projectColors', JSON.stringify(colors));
+}
+
+// Get color for a project (returns default if not set)
+function getProjectColor(projectPath) {
+  const colors = getProjectColors();
+  return colors[projectPath] || '#7aa2f7'; // Default blue
+}
+
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
@@ -237,6 +260,15 @@ function renderTasks() {
       showTaskDetails(taskId);
     });
   });
+
+  // Add event listeners to AI buttons
+  document.querySelectorAll('.ai-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation(); // Prevent task card click
+      const taskId = this.dataset.taskId;
+      openAIMenu(taskId);
+    });
+  });
 }
 
 function createTaskCard(task) {
@@ -262,9 +294,14 @@ function createTaskCard(task) {
       <div class="task-header">
         <div class="task-checkbox ${isCompleted ? 'checked' : ''}" data-task-id="${task.id}"></div>
         <div style="flex: 1;">
-          <div class="task-title ${isCompleted ? 'completed' : ''}">
+          <div class="task-title ${isCompleted ? 'completed' : ''}" style="display: flex; align-items: center;">
             ${task.parent_task_id ? '<span class="task-hierarchy-badge">SUB</span>' : ''}
-            ${escapeHtml(task.task_name)}
+            <span>${escapeHtml(task.task_name)}</span>
+            <button class="ai-btn" data-task-id="${task.id}" title="AI Actions">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -401,6 +438,8 @@ async function handleAddProject(e) {
     description: formData.get("project_description") || ""
   };
 
+  const projectColor = formData.get("project_color") || '#7aa2f7';
+
   try {
     const response = await fetch(`${API_BASE}/projects`, {
       method: "POST",
@@ -411,6 +450,9 @@ async function handleAddProject(e) {
     const data = await response.json();
 
     if (data.success) {
+      // Save the color for this project
+      saveProjectColor(data.project_path, projectColor);
+
       // Reset and hide project form
       e.target.reset();
       hideAddProjectForm();
@@ -428,6 +470,9 @@ async function handleAddProject(e) {
 
       // Select the new project
       projectSelect.value = data.project_path;
+
+      // Reload projects to show the new one with color
+      loadProjects();
 
       // Show a message to guide the user
       alert(`Project "${projectData.project_name}" created! Now add your first task to this project.`);
@@ -472,8 +517,8 @@ function updateProjectList(projects) {
     // Filter to show all tasks
     document.querySelectorAll(".project-item").forEach(item => item.classList.remove("active"));
     allProjectsBtn.classList.add("active");
-    currentFilter = "all";
-    renderTasks();
+    currentFilters.project = null;
+    loadTasks();
   });
   projectList.appendChild(allProjectsBtn);
 
@@ -487,6 +532,12 @@ function updateProjectList(projects) {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
 
+    // Get color for this project
+    const projectColor = getProjectColor(project.project_path);
+
+    // Set the color via inline style for the ::before pseudo-element
+    projectBtn.style.setProperty('--project-color', projectColor);
+
     projectBtn.innerHTML = `
       <span>${displayName}</span>
       <span class="project-count">${project.task_count || 0}</span>
@@ -496,7 +547,8 @@ function updateProjectList(projects) {
       // Filter tasks by this project
       document.querySelectorAll(".project-item").forEach(item => item.classList.remove("active"));
       projectBtn.classList.add("active");
-      // TODO: Implement project filtering
+      currentFilters.project = project.project_path;
+      loadTasks();
     });
 
     projectList.appendChild(projectBtn);
@@ -748,3 +800,518 @@ document.getElementById("versionModal").addEventListener("click", (e) => {
     document.getElementById("versionModal").style.display = "none";
   }
 });
+
+// ========================================
+// Activity Heatmap
+// ========================================
+
+function generateActivityHeatmap(tasks) {
+  const heatmap = document.getElementById('activityHeatmap');
+  if (!heatmap) return;
+
+  // Generate last 365 days
+  const today = new Date();
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - 364);
+
+  // Group tasks by date
+  const activityByDate = {};
+  const projectColors = {};
+  let colorIndex = 0;
+  const colors = ['#7aa2f7', '#9ece6a', '#e0af68', '#bb9af7', '#f7768e'];
+
+  tasks.forEach(task => {
+    if (task.completed_at) {
+      const date = task.completed_at.split('T')[0];
+      if (!activityByDate[date]) {
+        activityByDate[date] = { count: 0, projects: new Set() };
+      }
+      activityByDate[date].count++;
+      if (task.project_path) {
+        activityByDate[date].projects.add(task.project_path);
+        
+        // Assign color to project if not already assigned
+        if (!projectColors[task.project_path]) {
+          projectColors[task.project_path] = colors[colorIndex % colors.length];
+          colorIndex++;
+        }
+      }
+    }
+  });
+
+  // Find max count for scaling
+  const maxCount = Math.max(...Object.values(activityByDate).map(d => d.count), 1);
+
+  // Clear heatmap
+  heatmap.innerHTML = '';
+
+  // Generate grid of days
+  for (let i = 0; i < 365; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+
+    const activity = activityByDate[dateStr] || { count: 0, projects: new Set() };
+    const level = activity.count === 0 ? 0 : Math.min(Math.ceil((activity.count / maxCount) * 4), 4);
+
+    const dayEl = document.createElement('div');
+    dayEl.className = `heatmap-day level-${level}`;
+    dayEl.title = `${dateStr}: ${activity.count} task${activity.count !== 1 ? 's' : ''} completed`;
+
+    // If single project, color the square using saved project color
+    if (activity.projects.size === 1) {
+      const project = Array.from(activity.projects)[0];
+      const projectColor = getProjectColor(project);
+      dayEl.style.borderColor = projectColor;
+      dayEl.style.borderWidth = '2px';
+      dayEl.style.borderStyle = 'solid';
+    }
+
+    dayEl.onclick = () => {
+      const projectList = Array.from(activity.projects).join(', ');
+      alert(`${dateStr}\n${activity.count} tasks completed\nProjects: ${projectList || 'None'}`);
+    };
+
+    heatmap.appendChild(dayEl);
+  }
+}
+
+// Load activity heatmap when stats are loaded
+const originalLoadStats = loadStats;
+loadStats = function() {
+  originalLoadStats();
+  
+  // Load all tasks to generate heatmap
+  fetch(`${API_BASE}/tasks?limit=10000`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        generateActivityHeatmap(data.tasks);
+      }
+    })
+    .catch(err => console.error('Failed to load activity:', err));
+};
+
+// ========================================
+// Activity Heatmap
+// ========================================
+
+function generateActivityHeatmap(tasks) {
+  const heatmap = document.getElementById('activityHeatmap');
+  if (!heatmap) return;
+
+  // Generate last 365 days
+  const today = new Date();
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - 364);
+
+  // Group tasks by date
+  const activityByDate = {};
+
+  tasks.forEach(task => {
+    if (task.completed_at) {
+      const date = task.completed_at.split('T')[0];
+      if (!activityByDate[date]) {
+        activityByDate[date] = { count: 0, projects: new Set() };
+      }
+      activityByDate[date].count++;
+      if (task.project_path) {
+        activityByDate[date].projects.add(task.project_path);
+      }
+    }
+  });
+
+  // Find max count for scaling
+  const maxCount = Math.max(...Object.values(activityByDate).map(d => d.count), 1);
+
+  // Clear heatmap
+  heatmap.innerHTML = '';
+
+  // Generate grid of days
+  for (let i = 0; i < 365; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+
+    const activity = activityByDate[dateStr] || { count: 0, projects: new Set() };
+    const level = activity.count === 0 ? 0 : Math.min(Math.ceil((activity.count / maxCount) * 4), 4);
+
+    const dayEl = document.createElement('div');
+    dayEl.className = `heatmap-day level-${level}`;
+    dayEl.title = `${dateStr}: ${activity.count} task${activity.count !== 1 ? 's' : ''} completed`;
+
+    // If single project, color the square using saved project color
+    if (activity.projects.size === 1) {
+      const project = Array.from(activity.projects)[0];
+      const projectColor = getProjectColor(project);
+      dayEl.style.borderColor = projectColor;
+      dayEl.style.borderWidth = '2px';
+      dayEl.style.borderStyle = 'solid';
+    }
+
+    dayEl.onclick = () => {
+      const projectList = Array.from(activity.projects).join(', ');
+      alert(`${dateStr}\n${activity.count} tasks completed\nProjects: ${projectList || 'None'}`);
+    };
+
+    heatmap.appendChild(dayEl);
+  }
+}
+
+// Load activity heatmap when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  // Load all tasks to generate heatmap
+  fetch(`${API_BASE}/tasks?limit=10000`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        generateActivityHeatmap(data.tasks);
+      }
+    })
+    .catch(err => console.error('Failed to load activity:', err));
+});
+
+// ========================================
+// Category Dropdown
+// ========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+  const categoryDropdown = document.getElementById('categoryDropdown');
+  const addCategoryBtn = document.getElementById('addCategoryBtn');
+
+  // Handle category filter
+  if (categoryDropdown) {
+    categoryDropdown.addEventListener('change', function() {
+      const category = this.value;
+      currentFilters.category = category || null;
+      loadTasks();
+    });
+  }
+
+  // Handle add category button
+  if (addCategoryBtn) {
+    addCategoryBtn.addEventListener('click', function() {
+      const categoryName = prompt('Enter new category name:');
+      if (categoryName && categoryName.trim()) {
+        const value = categoryName.toLowerCase().replace(/\s+/g, '-');
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = categoryName;
+        categoryDropdown.appendChild(option);
+
+        // Save to localStorage
+        const customCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
+        customCategories.push({ value, label: categoryName });
+        localStorage.setItem('customCategories', JSON.stringify(customCategories));
+      }
+    });
+  }
+
+  // Load custom categories from localStorage
+  const customCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
+  customCategories.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat.value;
+    option.textContent = cat.label;
+    categoryDropdown.appendChild(option);
+  });
+});
+
+// ========================================
+// Risk Matrix
+// ========================================
+
+function calculateRiskLevel(dueDate, status) {
+  // Completed tasks have no risk
+  if (status === 'completed') return null;
+
+  // No due date = low risk
+  if (!dueDate) return 'low';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const due = new Date(dueDate);
+  due.setHours(0, 0, 0, 0);
+
+  const daysUntilDue = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+
+  // Critical: Overdue or due today
+  if (daysUntilDue <= 0) return 'critical';
+
+  // High: Due in 1-2 days
+  if (daysUntilDue <= 2) return 'high';
+
+  // Medium: Due in 3-7 days
+  if (daysUntilDue <= 7) return 'medium';
+
+  // Low: Due in more than 7 days
+  return 'low';
+}
+
+function updateRiskMatrix(tasks) {
+  const riskCounts = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0
+  };
+
+  tasks.forEach(task => {
+    const risk = calculateRiskLevel(task.due_date, task.status);
+    if (risk) {
+      riskCounts[risk]++;
+    }
+  });
+
+  // Update UI
+  document.getElementById('riskCritical').textContent = riskCounts.critical;
+  document.getElementById('riskHigh').textContent = riskCounts.high;
+  document.getElementById('riskMedium').textContent = riskCounts.medium;
+  document.getElementById('riskLow').textContent = riskCounts.low;
+
+  // Add click handlers to filter by risk
+  document.querySelectorAll('.risk-item').forEach(item => {
+    item.onclick = () => {
+      const riskLevel = item.classList.contains('risk-critical') ? 'critical' :
+                        item.classList.contains('risk-high') ? 'high' :
+                        item.classList.contains('risk-medium') ? 'medium' : 'low';
+
+      // Filter tasks by risk level
+      const filteredTasks = tasks.filter(task => {
+        return calculateRiskLevel(task.due_date, task.status) === riskLevel;
+      });
+
+      // Display filtered tasks (reuse existing filter mechanism)
+      displayTasks(filteredTasks);
+    };
+  });
+}
+
+// Hook into existing loadTasks function
+const originalLoadTasks = loadTasks;
+loadTasks = function() {
+  originalLoadTasks();
+
+  // Load all tasks for risk calculation
+  fetch(`${API_BASE}/tasks?limit=1000`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        updateRiskMatrix(data.tasks);
+      }
+    })
+    .catch(err => console.error('Failed to update risk matrix:', err));
+};
+
+// ========================================
+// AI Menu System
+// ========================================
+
+let currentAITaskId = null;
+
+// Initialize AI menu after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+  setupAIMenu();
+});
+
+function setupAIMenu() {
+  const aiMenuOverlay = document.getElementById('aiMenuOverlay');
+  const aiMenuClose = document.getElementById('aiMenuClose');
+
+  // Close menu when clicking overlay
+  if (aiMenuOverlay) {
+    aiMenuOverlay.addEventListener('click', function(e) {
+      if (e.target === aiMenuOverlay) {
+        closeAIMenu();
+      }
+    });
+  }
+
+  // Close menu when clicking close button
+  if (aiMenuClose) {
+    aiMenuClose.addEventListener('click', closeAIMenu);
+  }
+
+  // Handle AI menu item clicks
+  document.querySelectorAll('.ai-menu-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const action = this.dataset.action;
+      handleAIAction(action, currentAITaskId);
+    });
+  });
+
+  // Close menu on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && aiMenuOverlay.classList.contains('active')) {
+      closeAIMenu();
+    }
+  });
+}
+
+// Open AI menu for a specific task
+function openAIMenu(taskId) {
+  currentAITaskId = taskId;
+  const aiMenuOverlay = document.getElementById('aiMenuOverlay');
+  if (aiMenuOverlay) {
+    aiMenuOverlay.classList.add('active');
+  }
+}
+
+// Close AI menu
+function closeAIMenu() {
+  const aiMenuOverlay = document.getElementById('aiMenuOverlay');
+  if (aiMenuOverlay) {
+    aiMenuOverlay.classList.remove('active');
+  }
+  currentAITaskId = null;
+}
+
+// Handle AI actions
+async function handleAIAction(action, taskId) {
+  const task = tasks.find(t => t.id == taskId);
+  if (!task) {
+    alert('Task not found');
+    return;
+  }
+
+  closeAIMenu();
+
+  switch(action) {
+    case 'analyze':
+      await analyzeTask(task);
+      break;
+    case 'test':
+      await createTestCase(task);
+      break;
+    case 'document':
+      await createDocumentation(task);
+      break;
+    case 'copy':
+      copyTaskToClipboard(task);
+      break;
+  }
+}
+
+// AI Action: Analyze Task
+async function analyzeTask(task) {
+  alert(`AI Analysis:\n\nTask: ${task.task_name}\n\nThis feature will:\n1. Break down the task into subtasks\n2. Estimate realistic timelines\n3. Identify dependencies\n4. Suggest optimal execution order\n\n[Note: This would integrate with Claude API in production]`);
+
+  // In production, this would call an AI API endpoint
+  // Example subtasks could be created automatically
+  console.log('Analyzing task:', task);
+}
+
+// AI Action: Create Test Case
+async function createTestCase(task) {
+  const testCase = `# Test Case for: ${task.task_name}
+
+## Test Scenarios
+
+### Scenario 1: Happy Path
+- **Given**: Normal conditions
+- **When**: Task is executed
+- **Then**: Expected outcome achieved
+
+### Scenario 2: Edge Cases
+- **Given**: Boundary conditions
+- **When**: Task is executed
+- **Then**: System handles gracefully
+
+### Scenario 3: Error Handling
+- **Given**: Invalid inputs
+- **When**: Task is executed
+- **Then**: Appropriate error messages shown
+
+## Test Data
+- [List test data required]
+
+## Expected Results
+- [Define success criteria]
+
+---
+Generated for: ${task.task_name}
+Category: ${task.category || 'general'}
+Due Date: ${task.due_date || 'not set'}
+`;
+
+  // Copy to clipboard
+  try {
+    await navigator.clipboard.writeText(testCase);
+    alert(`Test case generated and copied to clipboard!\n\nYou can now paste it into your testing documentation.`);
+  } catch (err) {
+    alert(`Test Case:\n\n${testCase}`);
+  }
+}
+
+// AI Action: Create Documentation
+async function createDocumentation(task) {
+  const docs = `# Documentation: ${task.task_name}
+
+## Overview
+${task.description || 'Task description goes here'}
+
+## Purpose
+This task aims to accomplish [specific goal].
+
+## Requirements
+- Requirement 1
+- Requirement 2
+- Requirement 3
+
+## Implementation Steps
+1. Step 1: [Description]
+2. Step 2: [Description]
+3. Step 3: [Description]
+
+## Expected Outcome
+[Describe what success looks like]
+
+## Dependencies
+${task.parent_task_id ? '- Parent Task: [Link to parent]' : '- None'}
+
+## Timeline
+- Start: [Date]
+- Due: ${task.due_date || 'TBD'}
+- Estimated Duration: [Time]
+
+## Notes
+${task.action_required || 'Additional notes go here'}
+
+---
+Category: ${task.category || 'general'}
+Project: ${task.project_path || 'default'}
+Created: ${new Date().toLocaleDateString()}
+`;
+
+  // Copy to clipboard
+  try {
+    await navigator.clipboard.writeText(docs);
+    alert(`Documentation generated and copied to clipboard!\n\nYou can now paste it into your project docs.`);
+  } catch (err) {
+    alert(`Documentation:\n\n${docs}`);
+  }
+}
+
+// AI Action: Copy Task
+function copyTaskToClipboard(task) {
+  const taskText = `Task: ${task.task_name}
+Description: ${task.description || 'N/A'}
+Category: ${task.category || 'N/A'}
+Due Date: ${task.due_date || 'N/A'}
+Status: ${task.status}
+Action Required: ${task.action_required || 'N/A'}
+Project: ${task.project_path || 'default'}
+
+---
+Copy created: ${new Date().toLocaleString()}
+`;
+
+  navigator.clipboard.writeText(taskText).then(() => {
+    alert('Task copied to clipboard!');
+  }).catch(err => {
+    alert(`Failed to copy task: ${err.message}`);
+  });
+}
+
+// AI button event listeners are now handled directly in renderTasks() function

@@ -6,8 +6,9 @@ A beautiful, dark-themed task manager that seamlessly integrates with Claude Cod
 
 ## ✨ Features
 
+### Core Features
 - 🎋 **Japanese Minimalism** - Clean lines, negative space (Ma), refined beauty (Shibui)
-- 🌑 **Dark Theme** - Easy on the eyes with traditional pottery color accents
+- 🌑 **Dark Theme** - Easy on the eyes with Anthropic brand orange (#D97757) accents
 - ⚡ **Auto-Capture** - Automatically captures tasks from Claude Code `TodoWrite` calls
 - 📊 **Cross-Project** - One task repository for ALL your projects
 - 🔄 **Git-Powered** - Automatic commit, push, and sync
@@ -15,6 +16,14 @@ A beautiful, dark-themed task manager that seamlessly integrates with Claude Cod
 - 🌍 **Universal Access** - Clone your tasks repo anywhere
 - 🎨 **Sidebar UI** - Unobtrusive side panel, toggleable with `Cmd+Shift+T`
 - 🔄 **Real-time** - Auto-refresh every 30 seconds
+
+### V2.0.0 New Features
+- 🎨 **Project Color Coding** - Assign custom colors to projects with visual indicators
+- 📊 **Activity Heatmap** - GitHub-style 365-day contribution graph with project colors
+- 📈 **Risk Matrix** - Visual task urgency dashboard (Critical/High/Medium/Low)
+- 🤖 **AI Actions Menu** - Inline AI assistant for task analysis, test cases, and documentation
+- 🎯 **Enhanced Filtering** - Category dropdown, project filtering, and risk-based views
+- ✨ **Auto-Sync** - TodoWrite tasks auto-complete when marked done in Claude Code
 
 ## 🚀 Quick Start
 
@@ -138,6 +147,40 @@ The `post_tool_use.py` hook captures `TodoWrite` calls:
 └── projects/               # Project metadata
     └── HomeLab.json
 ```
+
+## 🎨 New V2.0.0 Features Explained
+
+### Project Color Coding
+Assign custom colors to your projects for better visual organization:
+- Color picker in project creation form
+- Colored dots next to project names in sidebar
+- Project colors reflected in activity heatmap borders
+- Colors stored in localStorage for persistence
+
+### Activity Heatmap
+A GitHub-style contribution graph showing your productivity:
+- 365-day visualization of completed tasks
+- Intensity levels based on task count (0-4+)
+- Project-specific border colors for single-project days
+- Click any day to see task details
+- Hover to see task counts
+
+### Risk Matrix
+Visual dashboard for task urgency management:
+- **Critical (Red)**: Overdue or due today
+- **High (Orange)**: Due in 1-2 days
+- **Medium (Blue)**: Due in 3-7 days
+- **Low (Green)**: Due in 7+ days or no due date
+- Click risk levels to filter tasks by urgency
+
+### AI Actions Menu
+Inline AI assistant for each task (lightning bolt icon):
+1. **Analyze Task** - Break down into subtasks with realistic timeline planning
+2. **Create Test Case** - Generate comprehensive test scenarios (copies to clipboard)
+3. **Create Documentation** - Auto-generate task documentation (copies to clipboard)
+4. **Copy Task** - Duplicate task details to clipboard in formatted text
+
+Simply click the ⚡ icon next to any task name to access AI actions!
 
 ## 🎯 API Endpoints
 
@@ -394,5 +437,14 @@ See [SETUP.md](./SETUP.md) for detailed setup instructions, advanced configurati
 
 **Created by:** candorian
 **Repository:** [claude-task-manager](https://github.com/21nauts/claude-task-manager)
-**Version:** 2.0.0 (Git-Based)
+**Version:** 2.1.0 (Enhanced with AI & Analytics)
+**Release Date:** November 2025
 **Status:** ✅ Production Ready
+
+### Latest Updates (v2.1.0)
+- Added project color coding with visual indicators
+- Implemented 365-day activity heatmap with project colors
+- Created risk matrix for task urgency visualization
+- Integrated AI actions menu for task assistance
+- Enhanced filtering with category dropdown and risk-based views
+- Improved auto-sync between TodoWrite and Task Manager

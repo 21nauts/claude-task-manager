@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/Users/jarvis/.pyenv/shims/uv run --script
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
@@ -22,6 +22,36 @@ TASK_MANAGER_URL = "http://localhost:5555/api/tasks"
 def get_project_name():
     """Get project name - always use 'Claude To-Do'"""
     return "claude-to-do"
+
+def get_existing_tasks(project_path: str):
+    """Get existing tasks from Task Manager"""
+    try:
+        response = requests.get(
+            f"{TASK_MANAGER_URL}?project={project_path}&limit=1000",
+            timeout=5
+        )
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("success"):
+                return data.get("tasks", [])
+    except:
+        pass
+    return []
+
+def mark_task_completed(task_id: str, task_name: str):
+    """Mark a task as completed"""
+    try:
+        response = requests.patch(
+            f"{TASK_MANAGER_URL}/{task_id}/status",
+            json={"status": "completed", "report": "Auto-completed via TodoWrite"},
+            timeout=5
+        )
+        if response.status_code == 200:
+            print(f"✅ Marked task as completed: {task_name} (ID: {task_id})", file=sys.stderr)
+            return True
+    except:
+        pass
+    return False
 
 def create_task_from_todo(todo_item: dict, project_path: str):
     """Create a task in Task Manager from TodoWrite item"""
@@ -93,25 +123,47 @@ def main():
         # Read hook data from stdin
         hook_data = json.loads(sys.stdin.read())
 
+        # Support both camelCase (actual Claude Code format) and snake_case
+        tool_name = hook_data.get("toolName", hook_data.get("tool_name", ""))
+
         # Only process TodoWrite tool
-        if hook_data.get("tool_name") != "TodoWrite":
+        if tool_name != "TodoWrite":
             sys.exit(0)
 
-        # Get tool parameters
-        params = hook_data.get("params", {})
-        todos = params.get("todos", [])
+        # Get tool parameters - try both naming conventions
+        tool_input = hook_data.get("toolInput", hook_data.get("tool_input", {}))
+        if not tool_input:
+            tool_input = hook_data.get("params", {})
+
+        todos = tool_input.get("todos", [])
 
         if not todos:
             sys.exit(0)
 
         project_path = get_project_name()
 
-        # Create tasks for each todo item
+        # Get existing tasks to check for completions
+        existing_tasks = get_existing_tasks(project_path)
+
+        # Create a map of task names for quick lookup
+        task_map = {task["task_name"]: task for task in existing_tasks}
+
+        # Process each todo item
         for todo in todos:
-            # Only create tasks that are pending or in_progress (not completed)
+            task_name = todo.get("content", "")
             status = todo.get("status")
-            if status in ["pending", "in_progress"]:
-                create_task_from_todo(todo, project_path)
+
+            # Check if this task exists and needs to be completed
+            if status == "completed" and task_name in task_map:
+                existing_task = task_map[task_name]
+                if existing_task["status"] != "completed":
+                    mark_task_completed(existing_task["id"], task_name)
+
+            # Create new tasks that are pending or in_progress
+            elif status in ["pending", "in_progress"]:
+                # Only create if it doesn't already exist
+                if task_name not in task_map:
+                    create_task_from_todo(todo, project_path)
 
     except Exception as e:
         print(f"Hook error: {e}", file=sys.stderr)

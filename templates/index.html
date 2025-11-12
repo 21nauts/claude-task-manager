@@ -214,6 +214,25 @@
       </button>
     </header>
 
+    <!-- Activity Heatmap -->
+    <section class="sidebar-section activity-heatmap-section">
+      <h3 class="section-title">Activity</h3>
+      <div class="activity-heatmap" id="activityHeatmap">
+        <div class="heatmap-loading">Loading activity...</div>
+      </div>
+      <div class="activity-legend">
+        <span class="legend-label">Less</span>
+        <div class="legend-squares">
+          <div class="legend-square level-0"></div>
+          <div class="legend-square level-1"></div>
+          <div class="legend-square level-2"></div>
+          <div class="legend-square level-3"></div>
+          <div class="legend-square level-4"></div>
+        </div>
+        <span class="legend-label">More</span>
+      </div>
+    </section>
+
     <!-- Add Task Form (Hidden by default) -->
     <section class="sidebar-section" id="addTaskSection" style="display: none;">
       <h3 class="section-title">Create Task</h3>
@@ -330,6 +349,20 @@
           ></textarea>
         </div>
 
+        <div class="form-group">
+          <label class="form-label" for="project_color">Project Color</label>
+          <div class="color-picker-group">
+            <input
+              type="color"
+              id="project_color"
+              name="project_color"
+              class="color-picker-input"
+              value="#7aa2f7"
+            >
+            <span class="color-picker-label">Choose a color for this project</span>
+          </div>
+        </div>
+
         <div class="form-actions">
           <button type="button" class="btn-secondary" id="cancelProjectBtn">Cancel</button>
           <button type="submit" class="btn-primary">Create Project</button>
@@ -350,15 +383,58 @@
 
     <!-- Category Filter -->
     <section class="sidebar-section">
-      <h3 class="section-title">Categories</h3>
-      <div class="category-list" id="categoryList">
-        <button class="category-item" data-category="feature">Feature</button>
-        <button class="category-item" data-category="bug">Bug Fix</button>
-        <button class="category-item" data-category="refactor">Refactor</button>
-        <button class="category-item" data-category="docs">Documentation</button>
-        <button class="category-item" data-category="test">Testing</button>
-        <button class="category-item" data-category="deploy">Deployment</button>
-        <button class="category-item" data-category="design">Design</button>
+      <div class="section-title-with-action">
+        <h3 class="section-title">Categories</h3>
+        <button class="btn-icon-small" id="addCategoryBtn" title="Add category">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+      </div>
+      <select class="category-dropdown" id="categoryDropdown">
+        <option value="">All Categories</option>
+        <option value="feature">Feature</option>
+        <option value="bug">Bug Fix</option>
+        <option value="refactor">Refactor</option>
+        <option value="docs">Documentation</option>
+        <option value="test">Testing</option>
+        <option value="deploy">Deployment</option>
+        <option value="design">Design</option>
+      </select>
+    </section>
+
+    <!-- Risk Matrix -->
+    <section class="sidebar-section">
+      <h3 class="section-title">Risk Matrix</h3>
+      <div class="risk-matrix" id="riskMatrix">
+        <div class="risk-item risk-critical">
+          <div class="risk-indicator"></div>
+          <div class="risk-info">
+            <span class="risk-label">Critical</span>
+            <span class="risk-count" id="riskCritical">0</span>
+          </div>
+        </div>
+        <div class="risk-item risk-high">
+          <div class="risk-indicator"></div>
+          <div class="risk-info">
+            <span class="risk-label">High</span>
+            <span class="risk-count" id="riskHigh">0</span>
+          </div>
+        </div>
+        <div class="risk-item risk-medium">
+          <div class="risk-indicator"></div>
+          <div class="risk-info">
+            <span class="risk-label">Medium</span>
+            <span class="risk-count" id="riskMedium">0</span>
+          </div>
+        </div>
+        <div class="risk-item risk-low">
+          <div class="risk-indicator"></div>
+          <div class="risk-info">
+            <span class="risk-label">Low</span>
+            <span class="risk-count" id="riskLow">0</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -379,7 +455,7 @@
   <div class="sidebar-overlay"></div>
 
   <!-- Version Badge -->
-  <div class="version-badge" id="versionBadge">V1</div>
+  <div class="version-badge" id="versionBadge">V2</div>
 
   <!-- Version Timeline Modal -->
   <div class="version-modal" id="versionModal" style="display: none;">
@@ -392,6 +468,25 @@
         <div class="version-item">
           <div class="version-dot"></div>
           <div class="version-content">
+            <div class="version-number">V2.0.0</div>
+            <div class="version-date">October 2025</div>
+            <ul class="version-features">
+              <li>Metrics dashboard with comprehensive analytics</li>
+              <li>Task execution system - Claude can read and execute tasks</li>
+              <li>TodoWrite integration - Claude's todos auto-sync to Task Manager</li>
+              <li>Claude To-Do project - dedicated space for AI-generated tasks</li>
+              <li>Anthropic brand color theme (#D97757)</li>
+              <li>Event logging system for task operations</li>
+              <li>Automated task categorization based on content</li>
+              <li>Project creation with metadata persistence</li>
+              <li>Enhanced Git SSH authentication with specific key support</li>
+              <li>Improved sidebar navigation with auto-close</li>
+            </ul>
+          </div>
+        </div>
+        <div class="version-item">
+          <div class="version-dot"></div>
+          <div class="version-content">
             <div class="version-number">V1.0.0</div>
             <div class="version-date">September 2024</div>
             <ul class="version-features">
@@ -400,7 +495,6 @@
               <li>Cross-project task visibility (one repo for all projects)</li>
               <li>Settings page with configuration management</li>
               <li>Japanese minimalist dark theme</li>
-              <li>Claude Code orange accent colors (#CE9178)</li>
               <li>Setup wizard for first-time configuration</li>
               <li>Task filtering by status, project, and category</li>
               <li>Subtask support with hierarchy</li>
@@ -408,6 +502,58 @@
             </ul>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Menu Overlay -->
+  <div class="ai-menu-overlay" id="aiMenuOverlay">
+    <div class="ai-menu" id="aiMenu">
+      <div class="ai-menu-header">
+        <h3>AI Actions</h3>
+        <button class="ai-menu-close" id="aiMenuClose">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ai-menu-content">
+        <button class="ai-menu-item" data-action="analyze">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+          </svg>
+          <div class="ai-menu-item-content">
+            <h4>Analyze Task</h4>
+            <p>Break down into subtasks and plan timeline</p>
+          </div>
+        </button>
+        <button class="ai-menu-item" data-action="test">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div class="ai-menu-item-content">
+            <h4>Create Test Case</h4>
+            <p>Generate test scenarios for this task</p>
+          </div>
+        </button>
+        <button class="ai-menu-item" data-action="document">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <div class="ai-menu-item-content">
+            <h4>Create Documentation</h4>
+            <p>Generate documentation for this task</p>
+          </div>
+        </button>
+        <button class="ai-menu-item" data-action="copy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          <div class="ai-menu-item-content">
+            <h4>Copy Task</h4>
+            <p>Duplicate this task to clipboard</p>
+          </div>
+        </button>
       </div>
     </div>
   </div>
