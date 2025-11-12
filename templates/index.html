@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Task Manager</title>
+  <link rel="stylesheet" href="/static/css/dark-theme.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Main Content Area (Tasks) -->
+  <main class="main-content">
+
+    <!-- Header with burger menu -->
+    <header class="main-header">
+      <div class="header-content">
+        <button class="sidebar-toggle" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <h1 class="main-title">My Task Manager</h1>
+        <div class="header-actions">
+          <button class="btn-icon" id="refreshBtn" title="Refresh tasks">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <section class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-value" id="statsTotal">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statsPending">0</div>
+        <div class="stat-label">Pending</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statsInProgress">0</div>
+        <div class="stat-label">In Progress</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statsCompleted">0</div>
+        <div class="stat-label">Completed</div>
+      </div>
+    </section>
+
+    <!-- Filter Tabs -->
+    <section class="filter-tabs">
+      <button class="filter-tab active" data-filter="all">All Tasks</button>
+      <button class="filter-tab" data-filter="pending">Pending</button>
+      <button class="filter-tab" data-filter="in_progress">In Progress</button>
+      <button class="filter-tab" data-filter="completed">Completed</button>
+
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="card">Card</button>
+        <button class="view-btn" data-view="list">List</button>
+        <button class="view-btn" data-view="compact">Compact</button>
+      </div>
+
+      <div class="view-toggle-wrapper">
+        <button class="view-toggle-icon" id="viewToggleIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="1"/>
+            <circle cx="12" cy="5" r="1"/>
+            <circle cx="12" cy="19" r="1"/>
+          </svg>
+        </button>
+        <div class="view-menu" id="viewMenu">
+          <button class="view-menu-item active" data-view="card">Card View</button>
+          <button class="view-menu-item" data-view="list">List View</button>
+          <button class="view-menu-item" data-view="compact">Compact View</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Task List (Main Content) -->
+    <section class="tasks-container">
+      <div id="taskList" class="task-grid"></div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+        <h3 class="empty-title">No tasks yet</h3>
+        <p class="empty-description">Use the sidebar to create your first task or let Claude Code auto-create them from TodoWrite calls.</p>
+      </div>
+    </section>
+
+    <!-- Floating Action Button -->
+    <button class="fab" id="fabBtn" title="Add new item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
+
+    <!-- FAB Menu -->
+    <div class="fab-menu" id="fabMenu">
+      <button class="fab-menu-item" data-action="project">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+        </svg>
+        <span>New Project</span>
+      </button>
+      <button class="fab-menu-item" data-action="task">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+        <span>New Task</span>
+      </button>
+      <button class="fab-menu-item" data-action="subtask">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        <span>New Sub-Task</span>
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Task Details Modal -->
+  <div id="taskDetailsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTaskName">Task Details</h2>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-group">
+          <label>Description</label>
+          <p id="modalDescription">-</p>
+        </div>
+        <div class="detail-group">
+          <label>Action Required</label>
+          <p id="modalActionRequired">-</p>
+        </div>
+        <div class="detail-row">
+          <div class="detail-group">
+            <label>Status</label>
+            <select id="modalStatus" class="form-select">
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div class="detail-group">
+            <label>Category</label>
+            <p id="modalCategory">-</p>
+          </div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-group">
+            <label>Due Date</label>
+            <p id="modalDueDate">-</p>
+          </div>
+          <div class="detail-group">
+            <label>Created</label>
+            <p id="modalCreatedAt">-</p>
+          </div>
+        </div>
+        <div class="detail-group" id="modalSubtasksSection" style="display: none;">
+          <label>Subtasks</label>
+          <div id="modalSubtasks"></div>
+          <button class="btn-secondary btn-sm" id="addSubtaskBtn">+ Add Subtask</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="deleteTaskBtn">Delete</button>
+        <button class="btn-primary" id="saveTaskBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar (Menu) -->
+  <aside class="sidebar">
+
+    <!-- Sidebar Header -->
+    <header class="sidebar-header">
+      <h2 class="sidebar-title">Task Manager</h2>
+      <p class="sidebar-subtitle">Claude Code Integration</p>
+      <button class="sidebar-close" aria-label="Close sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Quick Actions -->
+    <section class="sidebar-section">
+      <h3 class="section-title">Quick Actions</h3>
+      <button class="action-btn" id="addTaskBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span>New Task</span>
+      </button>
+      <button class="action-btn" id="addProjectBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+        </svg>
+        <span>New Project</span>
+      </button>
+    </section>
+
+    <!-- Add Task Form (Hidden by default) -->
+    <section class="sidebar-section" id="addTaskSection" style="display: none;">
+      <h3 class="section-title">Create Task</h3>
+      <form id="addTaskForm" class="task-form">
+
+        <div class="form-group">
+          <label class="form-label" for="task_name">Task Name *</label>
+          <input
+            type="text"
+            id="task_name"
+            name="task_name"
+            class="form-input"
+            placeholder="What needs to be done?"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">Description</label>
+          <textarea
+            id="description"
+            name="description"
+            class="form-textarea"
+            rows="3"
+            placeholder="Brief description"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="action_required">Action Required</label>
+          <input
+            type="text"
+            id="action_required"
+            name="action_required"
+            class="form-input"
+            placeholder="Link, command, or next step"
+          >
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="due_date">Due Date</label>
+            <input
+              type="date"
+              id="due_date"
+              name="due_date"
+              class="form-input"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="category">Category</label>
+            <select id="category" name="category" class="form-select">
+              <option value="">Select category</option>
+              <option value="feature">Feature</option>
+              <option value="bug">Bug Fix</option>
+              <option value="refactor">Refactor</option>
+              <option value="docs">Documentation</option>
+              <option value="test">Testing</option>
+              <option value="deploy">Deployment</option>
+              <option value="design">Design</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="parent_task">Parent Task (for subtasks)</label>
+            <select id="parent_task" name="parent_task" class="form-select">
+              <option value="">None (Main Task)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="project">Project</label>
+            <select id="project" name="project" class="form-select">
+              <option value="">Select project</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="cancelTaskBtn">Cancel</button>
+          <button type="submit" class="btn-primary">Create Task</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Add Project Form (Hidden by default) -->
+    <section class="sidebar-section" id="addProjectSection" style="display: none;">
+      <h3 class="section-title">Create Project</h3>
+      <form id="addProjectForm" class="task-form">
+        <div class="form-group">
+          <label class="form-label" for="project_name">Project Name *</label>
+          <input
+            type="text"
+            id="project_name"
+            name="project_name"
+            class="form-input"
+            placeholder="Project name"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="project_description">Description</label>
+          <textarea
+            id="project_description"
+            name="project_description"
+            class="form-textarea"
+            rows="2"
+            placeholder="Brief description"
+          ></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="cancelProjectBtn">Cancel</button>
+          <button type="submit" class="btn-primary">Create Project</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Project Filter -->
+    <section class="sidebar-section">
+      <h3 class="section-title">Projects</h3>
+      <div class="project-list" id="projectList">
+        <button class="project-item active" data-project="all">
+          <span class="project-name">All Projects</span>
+          <span class="project-count" id="projectCountAll">0</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Category Filter -->
+    <section class="sidebar-section">
+      <h3 class="section-title">Categories</h3>
+      <div class="category-list" id="categoryList">
+        <button class="category-item" data-category="feature">Feature</button>
+        <button class="category-item" data-category="bug">Bug Fix</button>
+        <button class="category-item" data-category="refactor">Refactor</button>
+        <button class="category-item" data-category="docs">Documentation</button>
+        <button class="category-item" data-category="test">Testing</button>
+        <button class="category-item" data-category="deploy">Deployment</button>
+        <button class="category-item" data-category="design">Design</button>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section class="sidebar-section">
+      <h3 class="section-title">About</h3>
+      <p class="about-text">
+        Task Manager integrates with Claude Code hooks to automatically capture tasks from <code>TodoWrite</code> calls.
+      </p>
+      <p class="about-text small">
+        Press <kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> to toggle this menu.
+      </p>
+    </section>
+
+  </aside>
+
+  <!-- Overlay -->
+  <div class="sidebar-overlay"></div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
