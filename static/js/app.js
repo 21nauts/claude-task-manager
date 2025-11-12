@@ -91,10 +91,6 @@ function setupEventListeners() {
     updateViewMode();
   }
 
-  // Add task button
-  document.getElementById("addTaskBtn").addEventListener("click", showAddTaskForm);
-  document.getElementById("cancelTaskBtn").addEventListener("click", hideAddTaskForm);
-
   // Add task form
   document.getElementById("addTaskForm").addEventListener("submit", handleAddTask);
 
@@ -112,9 +108,7 @@ function setupEventListeners() {
     }
   });
 
-  // Project button
-  document.getElementById("addProjectBtn").addEventListener("click", showAddProjectForm);
-  document.getElementById("cancelProjectBtn").addEventListener("click", hideAddProjectForm);
+  // Project form
   document.getElementById("addProjectForm").addEventListener("submit", handleAddProject);
 
   // Modal
@@ -162,6 +156,9 @@ function showAddTaskForm() {
 function hideAddTaskForm() {
   document.getElementById("addTaskSection").style.display = "none";
   document.getElementById("addTaskForm").reset();
+  // Close sidebar
+  document.querySelector(".sidebar").classList.remove("active");
+  document.querySelector(".sidebar-overlay").classList.remove("active");
 }
 
 async function loadTasks() {
@@ -390,6 +387,9 @@ function showAddProjectForm() {
 function hideAddProjectForm() {
   document.getElementById("addProjectSection").style.display = "none";
   document.getElementById("addProjectForm").reset();
+  // Close sidebar
+  document.querySelector(".sidebar").classList.remove("active");
+  document.querySelector(".sidebar-overlay").classList.remove("active");
 }
 
 async function handleAddProject(e) {
@@ -441,17 +441,75 @@ async function loadProjects() {
   try {
     const response = await fetch(`${API_BASE}/projects`);
     const data = await response.json();
-    
+
     if (data.success) {
       updateProjectSelects(data.projects);
+      updateProjectList(data.projects);
     }
   } catch (error) {
     console.error("Error loading projects:", error);
   }
 }
 
+function updateProjectList(projects) {
+  const projectList = document.getElementById("projectList");
+
+  if (!projectList) {
+    return;
+  }
+
+  // Clear existing items
+  projectList.innerHTML = '';
+
+  // Add "All Projects" button
+  const allProjectsBtn = document.createElement("button");
+  allProjectsBtn.className = "project-item active";
+  allProjectsBtn.innerHTML = `
+    <span>All Projects</span>
+    <span class="project-count">${projects.reduce((sum, p) => sum + (p.task_count || 0), 0)}</span>
+  `;
+  allProjectsBtn.addEventListener("click", () => {
+    // Filter to show all tasks
+    document.querySelectorAll(".project-item").forEach(item => item.classList.remove("active"));
+    allProjectsBtn.classList.add("active");
+    currentFilter = "all";
+    renderTasks();
+  });
+  projectList.appendChild(allProjectsBtn);
+
+  // Add individual projects
+  projects.forEach(project => {
+    const projectBtn = document.createElement("button");
+    projectBtn.className = "project-item";
+
+    const displayName = project.project_name || project.project_path
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    projectBtn.innerHTML = `
+      <span>${displayName}</span>
+      <span class="project-count">${project.task_count || 0}</span>
+    `;
+
+    projectBtn.addEventListener("click", () => {
+      // Filter tasks by this project
+      document.querySelectorAll(".project-item").forEach(item => item.classList.remove("active"));
+      projectBtn.classList.add("active");
+      // TODO: Implement project filtering
+    });
+
+    projectList.appendChild(projectBtn);
+  });
+}
+
 function updateProjectSelects(projects) {
   const projectSelect = document.getElementById("project");
+
+  if (!projectSelect) {
+    console.error("Project select element not found");
+    return;
+  }
 
   // Keep "Select project" option
   projectSelect.innerHTML = '<option value="">Select project</option>';
@@ -459,12 +517,14 @@ function updateProjectSelects(projects) {
   projects.forEach(project => {
     const option = document.createElement("option");
     option.value = project.project_path;
-    // Convert project path to display name (e.g., "my-project" -> "My Project")
-    const displayName = project.project_path
+
+    // Use project_name if available, otherwise format project_path
+    const displayName = project.project_name || project.project_path
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-    option.textContent = `${displayName} (${project.task_count})`;
+
+    option.textContent = `${displayName} (${project.task_count || 0})`;
     projectSelect.appendChild(option);
   });
 }
