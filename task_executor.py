@@ -155,12 +155,13 @@ class TaskExecutor:
             if not parent_task:
                 return None
 
+            # Always use "claude-to-do" project for Claude's tasks
             subtask_data = {
                 "task_name": subtask_name,
                 "description": description,
                 "action_required": "Complete subtask",
                 "category": category,
-                "project_path": parent_task.get("project_path"),
+                "project_path": "claude-to-do",
                 "parent_task_id": parent_task_id,
                 "status": "pending"
             }

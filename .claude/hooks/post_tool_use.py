@@ -20,10 +20,8 @@ from datetime import datetime, timedelta
 TASK_MANAGER_URL = "http://localhost:5555/api/tasks"
 
 def get_project_name():
-    """Get project name from current directory"""
-    cwd = os.getcwd()
-    # Get last directory name
-    return os.path.basename(cwd)
+    """Get project name - always use 'Claude To-Do'"""
+    return "claude-to-do"
 
 def create_task_from_todo(todo_item: dict, project_path: str):
     """Create a task in Task Manager from TodoWrite item"""
