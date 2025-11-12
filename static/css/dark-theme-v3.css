@@ -16,10 +16,10 @@
   --bg-tertiary: #2d2d2d;
   --bg-hover: #333333;
   
-  /* Accent colors - Claude Code Orange */
-  --accent-primary: #CE9178;
-  --accent-hover: #E09060;
-  --accent-muted: #CE9178;
+  /* Accent colors - Anthropic Brand Orange */
+  --accent-primary: #D97757;
+  --accent-hover: #E5885F;
+  --accent-muted: #D97757;
   
   /* Text colors */
   --text-primary: #e8e8e8;
@@ -31,7 +31,7 @@
   --border-hover: #4a4a4a;
   
   /* Status colors */
-  --status-pending: #CE9178;
+  --status-pending: #D97757;
   --status-progress: #7aa2f7;
   --status-completed: #9ece6a;
   
