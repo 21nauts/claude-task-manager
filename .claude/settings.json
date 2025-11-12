@@ -6,5 +6,11 @@
         "description": "Sync TodoWrite tasks to Task Manager"
       }
     ]
+  },
+  "commands": {
+    "execute-tasks": {
+      "path": ".claude/commands/execute-tasks.md",
+      "description": "Read and execute tasks from Task Manager"
+    }
   }
 }
