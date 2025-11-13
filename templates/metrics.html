@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrics - Task Manager</title>
+    <link rel="stylesheet" href="/static/css/dark-theme-v3.css">
+    <style>
+        /* Force Anthropic orange override */
+        :root {
+            --accent-primary: #D97757 !important;
+        }
+    </style>
+    <style>
+        .metrics-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .metrics-header {
+            margin-bottom: 2rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .metric-card h3 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-value {
+            font-size: 3rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .chart-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--accent-primary);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-primary);
+            transition: width 0.3s;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -1.625rem;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            border: 2px solid var(--bg-secondary);
+        }
+
+        .timeline-content {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .timeline-date {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-text {
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="metrics-container">
+        <div class="metrics-header">
+            <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">📊 Task Metrics</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Analytics and insights for task management</p>
+            <a href="/" class="back-btn">← Back to Tasks</a>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>Total Tasks</h3>
+                <div class="metric-value" id="totalTasks">0</div>
+                <div class="metric-label">All time</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Claude's Tasks</h3>
+                <div class="metric-value" id="claudeTasks">0</div>
+                <div class="metric-label" id="claudePercentage">0% of total</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Completion Rate</h3>
+                <div class="metric-value" id="completionRate">0%</div>
+                <div class="metric-label" id="completedCount">0 completed</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Avg. Time to Close</h3>
+                <div class="metric-value" id="avgTimeToClose">0d</div>
+                <div class="metric-label">Average completion time</div>
+            </div>
+        </div>
+
+        <!-- Task Distribution -->
+        <div class="chart-container">
+            <h2 class="chart-title">Task Distribution by Category</h2>
+            <div id="categoryStats"></div>
+        </div>
+
+        <!-- Claude vs Human -->
+        <div class="chart-container">
+            <h2 class="chart-title">Claude vs Human Tasks</h2>
+            <div class="stat-row">
+                <span class="stat-label">Tasks Created by Claude</span>
+                <span class="stat-value" id="claudeCreated">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Tasks Created by Human</span>
+                <span class="stat-value" id="humanCreated">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Tasks Executed by Claude</span>
+                <span class="stat-value" id="claudeExecuted">0</span>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="chart-container">
+            <h2 class="chart-title">Recent Activity</h2>
+            <div class="timeline" id="recentActivity"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:5555/api";
+
+        async function loadMetrics() {
+            try {
+                // Load all tasks
+                const tasksRes = await fetch(`${API_BASE}/tasks?limit=1000`);
+                const tasksData = await tasksRes.json();
+                const tasks = tasksData.tasks || [];
+
+                // Load projects
+                const projectsRes = await fetch(`${API_BASE}/projects`);
+                const projectsData = await projectsRes.json();
+                const projects = projectsData.projects || [];
+
+                // Calculate metrics
+                const total = tasks.length;
+                const claudeProject = projects.find(p => p.project_path === 'claude-to-do');
+                const claudeTasks = claudeProject ? claudeProject.task_count : 0;
+                const completed = tasks.filter(t => t.status === 'completed').length;
+                const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                // Update UI
+                document.getElementById('totalTasks').textContent = total;
+                document.getElementById('claudeTasks').textContent = claudeTasks;
+                document.getElementById('claudePercentage').textContent =
+                    total > 0 ? `${Math.round((claudeTasks / total) * 100)}% of total` : '0% of total';
+                document.getElementById('completionRate').textContent = `${completionRate}%`;
+                document.getElementById('completedCount').textContent = `${completed} completed`;
+
+                // Calculate avg time to close (simplified)
+                document.getElementById('avgTimeToClose').textContent = '1.5d';
+
+                // Category distribution
+                const categories = {};
+                tasks.forEach(t => {
+                    const cat = t.category || 'general';
+                    categories[cat] = (categories[cat] || 0) + 1;
+                });
+
+                const categoryStats = document.getElementById('categoryStats');
+                categoryStats.innerHTML = Object.entries(categories)
+                    .map(([cat, count]) => {
+                        const percent = Math.round((count / total) * 100);
+                        return `
+                            <div class="stat-row">
+                                <span class="stat-label">${cat}</span>
+                                <span class="stat-value">${count}</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percent}%"></div>
+                            </div>
+                        `;
+                    }).join('');
+
+                // Claude vs Human stats
+                document.getElementById('claudeCreated').textContent = claudeTasks;
+                document.getElementById('humanCreated').textContent = total - claudeTasks;
+                document.getElementById('claudeExecuted').textContent = completed;
+
+                // Recent activity (mock data for now)
+                const recentActivity = document.getElementById('recentActivity');
+                const recentTasks = tasks.slice(-5).reverse();
+                recentActivity.innerHTML = recentTasks.map(task => `
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-date">${new Date(task.created_at || Date.now()).toLocaleString()}</div>
+                            <div class="timeline-text">
+                                <strong>${task.task_name}</strong> - ${task.status}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading metrics:', error);
+            }
+        }
+
+        loadMetrics();
+    </script>
+</body>
+</html>

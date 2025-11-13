@@ -11,12 +11,26 @@ import os
 from pathlib import Path
 from datetime import datetime
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configure Git SSH to use the correct key
-GIT_SSH_COMMAND = "ssh -i ~/.ssh/id_48nauts -o IdentitiesOnly=yes"
+# Configure Git SSH to use custom key if specified in .env
+# If GIT_SSH_KEY_PATH is set in .env, use it; otherwise use default SSH config
+def get_git_ssh_command():
+    """Get Git SSH command from environment or use default"""
+    ssh_key_path = os.getenv('GIT_SSH_KEY_PATH', '').strip()
+    if ssh_key_path:
+        # Expand ~ to home directory
+        ssh_key_path = os.path.expanduser(ssh_key_path)
+        return f"ssh -i {ssh_key_path} -o IdentitiesOnly=yes"
+    return None  # Use default SSH config
+
+GIT_SSH_COMMAND = get_git_ssh_command()
 
 
 class SyncManager:
@@ -156,9 +170,10 @@ class SyncManager:
             return False
 
         try:
-            # Setup environment with SSH key
+            # Setup environment with SSH key (if specified)
             env = os.environ.copy()
-            env["GIT_SSH_COMMAND"] = GIT_SSH_COMMAND
+            if GIT_SSH_COMMAND:
+                env["GIT_SSH_COMMAND"] = GIT_SSH_COMMAND
 
             # Pull first
             logger.info("📥 Pulling latest changes...")

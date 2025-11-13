@@ -828,6 +828,27 @@ body {
   background: var(--bg-hover);
 }
 
+.btn-ai {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--accent-primary);
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-ai:hover {
+  background: var(--accent-primary);
+  color: var(--bg-primary);
+}
+
 /* Color Picker */
 .color-picker-group {
   display: flex;
@@ -1790,33 +1811,6 @@ kbd {
    ======================================== */
 
 /* AI Button on Task Cards */
-.ai-btn {
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 0.5rem;
-  opacity: 0.5;
-}
-
-.ai-btn:hover {
-  color: var(--accent-primary);
-  opacity: 1;
-  transform: scale(1.1);
-}
-
-.ai-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
 /* AI Menu Overlay */
 .ai-menu-overlay {
   position: fixed;
@@ -1826,7 +1820,7 @@ kbd {
   height: 100%;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
-  z-index: 9999;
+  z-index: 10001;
   display: none;
   align-items: center;
   justify-content: center;
@@ -1834,7 +1828,9 @@ kbd {
 }
 
 .ai-menu-overlay.active {
-  display: flex;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 @keyframes fadeIn {

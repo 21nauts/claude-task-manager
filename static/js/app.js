@@ -139,6 +139,25 @@ function setupEventListeners() {
   document.getElementById("saveTaskBtn").addEventListener("click", saveTaskChanges);
   document.getElementById("deleteTaskBtn").addEventListener("click", deleteTask);
 
+  // AI Actions button in modal
+  const aiActionsBtn = document.getElementById("aiActionsBtn");
+  console.log('AI Actions button element:', aiActionsBtn);
+  if (aiActionsBtn) {
+    aiActionsBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('AI Actions button clicked, currentTaskId:', currentTaskId);
+      if (currentTaskId) {
+        openAIMenu(currentTaskId);
+      } else {
+        console.error('No currentTaskId available');
+      }
+    });
+    console.log('AI Actions button event listener attached successfully');
+  } else {
+    console.error('AI Actions button not found in DOM!');
+  }
+
   // Click outside modal to close
   document.getElementById("taskDetailsModal").addEventListener("click", (e) => {
     if (e.target.id === "taskDetailsModal") {
@@ -260,15 +279,6 @@ function renderTasks() {
       showTaskDetails(taskId);
     });
   });
-
-  // Add event listeners to AI buttons
-  document.querySelectorAll('.ai-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation(); // Prevent task card click
-      const taskId = this.dataset.taskId;
-      openAIMenu(taskId);
-    });
-  });
 }
 
 function createTaskCard(task) {
@@ -294,14 +304,9 @@ function createTaskCard(task) {
       <div class="task-header">
         <div class="task-checkbox ${isCompleted ? 'checked' : ''}" data-task-id="${task.id}"></div>
         <div style="flex: 1;">
-          <div class="task-title ${isCompleted ? 'completed' : ''}" style="display: flex; align-items: center;">
+          <div class="task-title ${isCompleted ? 'completed' : ''}">
             ${task.parent_task_id ? '<span class="task-hierarchy-badge">SUB</span>' : ''}
-            <span>${escapeHtml(task.task_name)}</span>
-            <button class="ai-btn" data-task-id="${task.id}" title="AI Actions">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-              </svg>
-            </button>
+            ${escapeHtml(task.task_name)}
           </div>
         </div>
       </div>
@@ -1151,10 +1156,15 @@ function setupAIMenu() {
 
 // Open AI menu for a specific task
 function openAIMenu(taskId) {
+  console.log('openAIMenu called with taskId:', taskId);
   currentAITaskId = taskId;
   const aiMenuOverlay = document.getElementById('aiMenuOverlay');
+  console.log('aiMenuOverlay element:', aiMenuOverlay);
   if (aiMenuOverlay) {
     aiMenuOverlay.classList.add('active');
+    console.log('Added active class to AI menu overlay');
+  } else {
+    console.error('AI menu overlay element not found!');
   }
 }
 

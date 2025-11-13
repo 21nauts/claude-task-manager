@@ -113,6 +113,14 @@ def settings():
     return render_template("settings.html")
 
 
+@app.route("/metrics")
+def metrics():
+    """Metrics dashboard page"""
+    if not config.is_configured():
+        return redirect(url_for('setup'))
+    return render_template("metrics.html")
+
+
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     """Get all tasks with optional filters"""
