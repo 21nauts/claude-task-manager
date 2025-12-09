@@ -449,3 +449,4 @@ See [SETUP.md](./SETUP.md) for detailed setup instructions, advanced configurati
 - Enhanced filtering with category dropdown and risk-based views
 - Improved auto-sync between TodoWrite and Task Manager
 
+# Testing NautScanner
