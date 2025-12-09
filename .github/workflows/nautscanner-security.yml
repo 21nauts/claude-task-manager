@@ -1,0 +1,29 @@
+name: NautScanner Security Scan
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    name: Security Vulnerability Scan
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run NautScanner
+        uses: 21nauts/nautcyberscan/.github/actions/nautscanner@main
+        with:
+          # API URL for NautScanner
+          api_url: https://18a399fefe80.ngrok-free.app/api/v1
+          # Fail build on critical vulnerabilities
+          fail_on_critical: true
+          # Report medium severity and above
+          min_severity: medium
